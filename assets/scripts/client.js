@@ -4,11 +4,76 @@ let Client = new Object();
 
 setup = () => {
     /* Local Storage */
-
     getLocal = (target) => localStorage.getItem(target);
     setLocal = (target, value) => localStorage.setItem(target, value);
 
     /* Classes */
+    class Component {
+        constructor (properties, css) {
+            this.properties = properties;
+            this.parent = properties.parent || null;
+
+            this.initiate(css);
+        }
+
+        appendChild (element) {
+            this.element.appendChild(element);
+        }
+
+        initiate (css) {
+            this.properties.tag = this.properties.tag || "div";
+            this.element = document.createElement(this.properties.tag);
+
+            this.element.id = this.properties.id || "";
+            this.element.className = this.properties.class || "";
+
+            if (css && this.properties.class) {
+                const keys = Object.keys(css);
+                const classes = this.properties.class.split(" ");
+
+                this.properties.style = {...this.properties.style, ...css["*"]};
+
+                for (let i = 0; i < classes.length; i++) {
+                    const style = css[classes[i]];
+
+                    if (style) {
+                        this.properties.style = {...this.properties.style, ...style};
+                    }
+                }
+
+            }
+
+            if (typeof this.properties.attribute == "object") {
+                const keys = Object.keys(this.properties.attribute);
+                for (let i = 0; i < keys.length; i++) {
+                    const attribute = this.properties.attribute;
+                    this.element.setAttribute(keys[i], attribute[keys[i]]);
+                }
+            }
+
+            if (typeof this.properties.style == "object") {
+                const keys = Object.keys(this.properties.style);
+                for (let i = 0; i < keys.length; i++) {
+                    const style = this.properties.style;
+                    this.element.style[keys[i]] = style[keys[i]];
+                }
+            }
+
+            if (typeof this.properties.text == "string") {
+                this.element.innerHTML = this.properties.text;
+            }
+
+            if (this.properties.children) {
+                const children = Object.keys(this.properties.children);
+
+                for (let i = 0; i < children.length; i++) {
+                    this.properties.children[children[i]].component = new Component(this.properties.children[children[i]], css);
+                    this.appendChild(this.properties.children[children[i]].component.element);
+                }
+            }
+        }
+    }
+
     class Connection {
         constructor (type, ipAddress) {
             this.ipAddress = ipAddress;
@@ -30,6 +95,7 @@ setup = () => {
             }
 
             this.type == "player" && Client.util.handleLeaderboard([]);
+            this.type == "player" && $("#chat-box").html("");
     
             setTimeout(() => {
                 this.socket = new WebSocket(this.ipAddress);
@@ -321,7 +387,7 @@ setup = () => {
                 this.socket.onclose = () => {
                     console.log(`${this.type} connection closed`);
                 };
-            }, 100);
+            }, 10);
         }
     
         send (data) {
@@ -371,6 +437,793 @@ setup = () => {
         }
     }
 
+    Client.renderer = {
+        renderHTML: () => {
+            const globalCSS = {
+                "*": {
+                    "text-align": "center",
+                    "font-family": "'Ubuntu', sans-serif",
+                    "outline": "none",
+                    "user-select": "none"
+                },
+                "body": {
+                    "background-color": "#f2fbff",
+                    "margin": "0",
+                    "padding": "0",
+                    "overflow": "hidden"
+                },
+                "input": {
+                    "height": "35px",
+                    "color": "#353535",
+                    "text-align": "left",
+                    "background-color": "transparent",
+                    "box-shadow": "inset 0 0 0 2px rgba(0, 0, 0, 0.25)",
+                    "border": "none",
+                    "border-radius": "5px",
+                    "font-size": "16px",
+                    "font-weight": "700",
+                    "outline": "none",
+                    "padding": "0 10px"
+                },
+                "select": {
+                    "border": "none",
+                    "outline": "none"
+                },
+                "ul": {
+                    "list-style": "none",
+                    "margin": "0",
+                    "padding": "0"
+                },
+                "container": {
+                    "position": "fixed"
+                },
+                "sub-container": {
+                    "position": "absolute"
+                },
+                "full": {
+                    "width": "100%",
+                    "height": "100%"
+                },
+                "center": {
+                    "top": "50%",
+                    "left": "50%",
+                    "transform": "translate(-50%, -50%)"
+                },
+                "fixed": {
+                    "position": "fixed"
+                },
+                "absolute": {
+                    "position": "absolute"
+                },
+                "relative": {
+                    "position": "relative"
+                },
+                "pane-column": {
+                    "display": "flex",
+                    "flex-direction": "column",
+                    "width": "300px",
+                    "gap": "5px"
+                },
+                "pane-section": {
+                    "width": "calc(100% - 50px)",
+                    "background-color": "#fff",
+                    "border-radius": "10px",
+                    "padding": "25px"
+                },
+                "pane-section-row": {
+                    "display": "flex",
+                    "flex-direction": "row",
+                    "width": "100%",
+                    "height": "40px",
+                    "justify-content": "center",
+                    "align-items": "center",
+                    "gap": "10px",
+                    "margin": "0 0 15px 0"
+                },
+                "pane-section-title": {
+                    "display": "block",
+                    "width": "100%",
+                    "color": "#353535",
+                    "text-align": "center",
+                    "font-size": "16px",
+                    "font-weight": "700",
+                    "margin": "0 0 10px 0"
+                },
+                "skin-preview": {
+                    "width": "45px",
+                    "height": "45px",
+                    "backgroun-position": "cover",
+                    "background-size": "cover",
+                    "background-repeat": "no-repeat",
+                    "box-shadow": "inset 0 0 0 2px rgba(0, 0, 0, 0.25)",
+                    "border-radius": "50%",
+                    "cursor": "pointer"
+                },
+                "skin-preview-alt": {
+                    "top": "-4px",
+                    "left": "-2px",
+                    "width": "22px",
+                    "height": "22px",
+                    "line-height": "22px",
+                    "color": "#FFF",
+                    "text-align": "center",
+                    "background": "#54C800",
+                    "box-shadow": "inset 0 0 0 2.5px rgba(0, 0, 0, 0.15)",
+                    "border-radius": "50%",
+                    "font-size": "12px"
+                },
+                "btn": {
+                    "color": "#fff",
+                    "text-align": "center",
+                    "border-radius": "5px",
+                    "font-size": "20px",
+                    "font-weight": "700",
+                    "cursor": "pointer"
+                },
+                "btn-green": {
+                    "background-color": "#54c800"
+                },
+                "btn-red": {
+                    "background-color": "#f7000c"
+                },
+                "how-to": {
+                    "color": "#353535",
+                    "text-align": "center",
+                    "font-size": "14px",
+                    "opacity": "0.8"
+                },
+                "server-box": {
+                    "width": "47%",
+                    "height": "45px",
+                    "text-align": "center",
+                    "background": "rgba(100, 100, 100, 0.25)",
+                    "border-radius": "3px",
+                    "opacity": "0.75",
+                    "cursor": "pointer"
+                },
+                "server-box-selected": {
+                    "background": "transparent",
+                    "box-shadow": "inset 0 0 0 3px rgba(0, 0, 0, 0.25)",
+                    "opacity": "1"
+                },
+                "server-host": {
+                    "top": "5px",
+                    "left": "10px",
+                    "color": "#353535",
+                    "font-size": "18px",
+                    "font-weight": "700"
+                },
+                "server-ip-address": {
+                    "bottom": "5px",
+                    "left": "10px",
+                    "color": "#555",
+                    "font-size": "10px"
+                },
+                "skin-search-item": {
+                    "width": "75px",
+                    "height": "75px",
+                    "line-height": "75px",
+                    "text-align": "center",
+                    "background-size": "cover",
+                    "background-position": "center",
+                    "background-repeat": "no-repeat",
+                    "box-shadow": "inset 0 0 0 2px rgba(0, 0, 0, 0.2)",
+                    "border-radius": "50%",
+                    "font-size": "50px",
+                    "font-weight": "700",
+                    "cursor": "pointer"
+                }
+            };
+
+            let elements = {
+                "overlay-container": {
+                    id: "overlay-container",
+                    class: "container full center",
+                    parent: "body",
+                    style: {
+                        "background": "rgba(0, 0, 0, 0.75)",
+                        "z-index": "50"
+                    },
+                    children: {
+                        "pane-sub-container": {
+                            id: "pane-sub-container",
+                            class: "sub-container center",
+                            style: {
+                                "display": "flex",
+                                "flex-direction": "row",
+                                "gap": "5px"
+                            },
+                            children: {
+                                "pane-column-left": {
+                                    class: "pane-column",
+                                    style: {},
+                                    children: {
+                                        "minion-section": {
+                                            id: "minion-section",
+                                            class: "pane-section",
+                                            style: {},
+                                            children: {
+                                                "minion-section-title": {
+                                                    class: "pane-section-title",
+                                                    text: "Minions"
+                                                },
+                                                "minion-input-row": {
+                                                    class: "pane-section-row",
+                                                    children: {
+                                                        "minion-skin-preview": {
+                                                            id: "minion-skin-preview",
+                                                            class: "skin-preview relative",
+                                                            children: {
+                                                                "minion-skin-preview-alt": {
+                                                                    class: "skin-preview-alt absolute",
+                                                                    text: "<i class='fa-solid fa-plus'></i>"
+                                                                }
+                                                            },
+                                                            attribute: {
+                                                                "toggle-for": "minion"
+                                                            }
+                                                        },
+                                                        "minion-nick": {
+                                                            tag: "input",
+                                                            id: "minion-nick",
+                                                            class: "input",
+                                                            attribute: {
+                                                                "type": "text",
+                                                                "maxlength": "15",
+                                                                "placeholder": getLocal("minion-nick") || "Minion Nick",
+                                                                "spellcheck": "false"
+                                                            },
+                                                            style: {
+                                                                "width": "62%"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "minion-amount-row": {
+                                                    class: "pane-section-row relative",
+                                                    children: {
+                                                        "minion-amount-label": {
+                                                            id: "minion-amount-label",
+                                                            class: "absolute",
+                                                            text: (getLocal("minion-amount") || "25") + " Bots",
+                                                            style: {
+                                                                "top": "0",
+                                                                "left": "50%",
+                                                                "transform": "translate(-50%, 0)",
+                                                                "height": "20px",
+                                                                "line-height": "20px",
+                                                                "color": "#353535",
+                                                                "box-shadow": "inset 0 0 0 2px rgba(0, 0, 0, 0.25)",
+                                                                "border-radius": "3px",
+                                                                "font-size": "12px",
+                                                                "font-weight": "700",
+                                                                "padding": "0 10px"
+                                                            }
+                                                        },
+                                                        "minion-amount-slider": {
+                                                            tag: "input",
+                                                            id: "minion-amount-slider",
+                                                            class: "absolute",
+                                                            attribute: {
+                                                                "type": "range",
+                                                                "min": "5",
+                                                                "max": "200",
+                                                                "value": getLocal("minion-amount") || "25",
+                                                                "step": "5"
+                                                            },
+                                                            style: {
+                                                                "appearance": "none",
+                                                                "bottom": "0",
+                                                                "left": "50%",
+                                                                "transform": "translate(-50%, 0)",
+                                                                "width": "80%",
+                                                                "height": "6px",
+                                                                "background": "rgba(0, 0, 0, 0.1)",
+                                                                "border-radius": "2px"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "toggle-minions": {
+                                                    id: "toggle-minions",
+                                                    class: "btn btn-green",
+                                                    text: "Start",
+                                                    style: {
+                                                        "width": "100%",
+                                                        "height": "35px",
+                                                        "line-height": "35px",
+                                                        "margin": "0 0 10px 0"
+                                                    }
+                                                },
+                                                "how-to-control": {
+                                                    id: "how-to-control",
+                                                    class: "how-to",
+                                                    children: {
+                                                        "how-to-control-0": {
+                                                            tag: "span",
+                                                            text: "Press <strong>P</strong> to toggle follow / pause"
+                                                        },
+                                                        "minion-break-0": {
+                                                            tag: "br"
+                                                        },
+                                                        "how-to-control-1": {
+                                                            tag: "span",
+                                                            text: "Press <strong>E</strong> to split minions"
+                                                        },
+                                                        "minion-break-1": {
+                                                            tag: "br"
+                                                        },
+                                                        "how-to-control-2": {
+                                                            tag: "span",
+                                                            text: "Press <strong>R</strong> to eject closest minions"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "pane-column-center": {
+                                    class: "pane-column",
+                                    children: {
+                                        "play-section": {
+                                            id: "play-section",
+                                            class: "pane-section",
+                                            style: {},
+                                            children: {
+                                                "play-section-title": {
+                                                    id: "play-section-title",
+                                                    class: "relative",
+                                                    text: "CellBite",
+                                                    children: {
+                                                        "play-section-sub-title": {
+                                                            id: "play-section-sub-title",
+                                                            class: "relative",
+                                                            text: "Connecting...",
+                                                            style: {
+                                                                "color": "#555",
+                                                                "font-size": "12px",
+                                                                "font-weight": "400"
+                                                            }
+                                                        }
+                                                    },
+                                                    style: {
+                                                        "display": "block",
+                                                        "color": "#353535",
+                                                        "text-align": "center",
+                                                        "font-size": "48px",
+                                                        "font-weight": "700",
+                                                        "margin": "0 auto 25px auto"
+                                                    }
+                                                },
+                                                "player-input-row": {
+                                                    class: "pane-section-row",
+                                                    children: {
+                                                        "player-skin-preview": {
+                                                            id: "player-skin-preview",
+                                                            class: "skin-preview relative",
+                                                            children: {
+                                                                "player-skin-preview-alt": {
+                                                                    class: "skin-preview-alt absolute",
+                                                                    text: "<i class='fa-solid fa-plus'></i>"
+                                                                }
+                                                            },
+                                                            attribute: {
+                                                                "toggle-for": "player"
+                                                            }
+                                                        },
+                                                        "player-nick": {
+                                                            tag: "input",
+                                                            id: "nick",
+                                                            class: "input",
+                                                            attribute: {
+                                                                "type": "text",
+                                                                "maxlength": "15",
+                                                                "placeholder": getLocal("nick") || "Nick",
+                                                                "spellcheck": "false"
+                                                            },
+                                                            style: {
+                                                                "width": "62%"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "play": {
+                                                    id: "play",
+                                                    class: "btn btn-green",
+                                                    text: "Play",
+                                                    style: {
+                                                        "width": "100%",
+                                                        "height": "35px",
+                                                        "line-height": "35px",
+                                                        "margin": "0 0 10px 0"
+                                                    }
+                                                },
+                                                "how-to-play": {
+                                                    id: "how-to-play",
+                                                    class: "how-to",
+                                                    children: {
+                                                        "how-to-play-0": {
+                                                            tag: "span",
+                                                            text: "Move your mouse to control your cell"
+                                                        },
+                                                        "player-break-0": {
+                                                            tag: "br"
+                                                        },
+                                                        "how-to-play-1": {
+                                                            tag: "span",
+                                                            text: "Press <strong>Space</strong> to split"
+                                                        },
+                                                        "play-break-1": {
+                                                            tag: "br"
+                                                        },
+                                                        "how-to-play-2": {
+                                                            tag: "span",
+                                                            text: "Press <strong>W</strong> to eject some mass"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "settings-section": {
+                                            id: "play-section",
+                                            class: "pane-section",
+                                            style: {},
+                                            children: {
+                                                "settings-section-title": {
+                                                    class: "pane-section-title",
+                                                    text: "Settings"
+                                                },
+                                                "settings-section-row": {
+                                                    class: "pane-section-row",
+                                                    children: {
+                                                        "graphics-select": {
+                                                            tag: "select",
+                                                            id: "graphics",
+                                                            class: "input",
+                                                            style: {},
+                                                            children: {
+                                                                "graphics-option-0": {
+                                                                    tag: "option",
+                                                                    text: "Graphics: Retina",
+                                                                    attribute: {
+                                                                        "value": "retina"
+                                                                    }
+                                                                },
+                                                                "graphics-option-1": {
+                                                                    tag: "option",
+                                                                    text: "Graphics: High",
+                                                                    attribute: {
+                                                                        "value": "high"
+                                                                    }
+                                                                },
+                                                                "graphics-option-2": {
+                                                                    tag: "option",
+                                                                    text: "Graphics: Medium",
+                                                                    attribute: {
+                                                                        "value": "medium"
+                                                                    }
+                                                                },
+                                                                "graphics-option-3": {
+                                                                    tag: "option",
+                                                                    text: "Graphics: Low",
+                                                                    attribute: {
+                                                                        "value": "low"
+                                                                    }
+                                                                },
+                                                                "graphics-option-4": {
+                                                                    tag: "option",
+                                                                    text: "Graphics: Very Low",
+                                                                    attribute: {
+                                                                        "value": "very_low"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    style: {}
+                                },
+                                "pane-column-right": {
+                                    class: "pane-column",
+                                    style: {},
+                                    children: {
+                                        "server-section": {
+                                            id: "server-section",
+                                            class: "pane-section",
+                                            style: {},
+                                            children: {
+                                                "server-section-title": {
+                                                    class: "pane-section-title",
+                                                    text: "Servers"
+                                                },
+                                                "server-grid": {
+                                                    id: "server-grid",
+                                                    style: {
+                                                        "display": "flex",
+                                                        "flex-direction": "row",
+                                                        "flex-wrap": "wrap",
+                                                        "justify-content": "center",
+                                                        "align-items": "center",
+                                                        "gap": "15px"
+                                                    },
+                                                    children: {}
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "skin-sub-container": {
+                            id: "skin-sub-container",
+                            class: "sub-container center",
+                            style: {
+                                "display": "none",
+                                "width": "920px",
+                                "height": "620px",
+                                "background": "#FFF",
+                                "border-radius": "10px",
+                                "padding": "20px",
+                                "z-index": "100"
+                            },
+                            children: {
+                                "skin-search": {
+                                    tag: "input",
+                                    id: "skin-search",
+                                    class: "input",
+                                    attribute: {
+                                        "type": "text",
+                                        "maxlength": "50",
+                                        "placeholder": "Search Skins",
+                                        "spellcheck": "false"
+                                    },
+                                    style: {
+                                        "display": "block",
+                                        "width": "200px",
+                                        "text-align": "center",
+                                        "margin": "0 auto 20px auto"
+                                    }
+                                },
+                                "skin-search-list": {
+                                    id: "skin-search-list",
+                                    style: {
+                                        "display": "flex",
+                                        "flex-direction": "row",
+                                        "flex-wrap": "wrap",
+                                        "justify-content": "center",
+                                        "align-content": "flex-start",
+                                        "width": "100%",
+                                        "height": "calc(100% - 55px)",
+                                        "gap": "20px",
+                                        "overflow-x": "hidden",
+                                        "overflow-y": "scroll"
+                                    },
+                                    children: {
+                                        "skin-search-item": {
+                                            class: "skin-search-item",
+                                            text: "?",
+                                            attribute: {
+                                                "skin-tag": "::random"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "game-overlay-container": {
+                    id: "game-overlay-container",
+                    class: "container full center",
+                    parent: "body",
+                    style: {
+                        "display": "none",
+                        "z-index": "25"
+                    },
+                    children: {
+                        "leaderboard-sub-container": {
+                            id: "leaderboard-sub-container",
+                            class: "sub-container",
+                            style: {
+                                "top": "20px",
+                                "right": "20px",
+                                "width": "375px",
+                                "color": "#FFF",
+                                "background": "rgba(0, 0, 0, 0.4)",
+                                "padding": "20px 0"
+                            },
+                            children: {
+                                "leaderboard-title": {
+                                    id: "leaderboard-title",
+                                    text: "Leaderboard",
+                                    style: {
+                                        "display": "block",
+                                        "text-align": "center",
+                                        "font-size": "45px",
+                                        "font-weight": "700",
+                                        "margin": "0 0 10px 0"
+                                    }
+                                },
+                                "leaderboard-ul": {
+                                    tag: "ul",
+                                    id: "leaderboard-ul",
+                                    class: "ul",
+                                    style: {
+                                        "display": "flex",
+                                        "flex-direction": "column",
+                                        "width": "calc(100% - 40px)",
+                                        "gap": "5px",
+                                        "font-size": "25px",
+                                        "margin": "0 auto"
+                                    }
+                                }
+                            }
+                        },
+                        "chat-sub-container": {
+                            id: "chat-sub-container",
+                            class: "sub-container",
+                            style: {
+                                "bottom": "20px",
+                                "left": "20px",
+                                "width": "350px"
+                            },
+                            children: {
+                                "chat-shadow": {
+                                    id: "chat-shadow",
+                                    class: "absolute",
+                                    style: {
+                                        "bottom": "-50px",
+                                        "left": "-50px",
+                                        "width": "calc(100% + 100px)",
+                                        "height": "calc(100% + 100px)",
+                                        "background": "linear-gradient(to bottom, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.5))",
+                                        "filter": "blur(50px)",
+                                        "z-index": "-1"
+                                    }
+                                },
+                                "chat-box": {
+                                    id: "chat-box",
+                                    style: {
+                                        "display": "flex",
+                                        "flex-direction": "row",
+                                        "justify-content": "center",
+                                        "flex-wrap": "wrap",
+                                        "width": "300px",
+                                        "max-height": "550px",
+                                        "gap": "10px",
+                                        "color": "#fff",
+                                        "overflow-x": "auto",
+                                        "overflow-y": "scroll",
+                                        "margin": "0 0 20px 0"
+                                    }
+                                },
+                                "chat-emoji-ul": {
+                                    tag: "ul",
+                                    id: "chat-emoji-ul",
+                                    style: {
+                                        "display": "flex",
+                                        "width": "100%",
+                                        "height": "35px",
+                                        "gap": "5px",
+                                        "white-space": "nowrap",
+                                        "padding": "0",
+                                        "margin": "0 0 20px 0"
+                                    },
+                                    children: {}
+                                },
+                                "chat-input": {
+                                    id: "chat-input",
+                                    style: {
+                                        "display": "flex",
+                                        "flex-direction": "row",
+                                        "width": "100%",
+                                        "height": "35px",
+                                    },
+                                    children: {
+                                        "message-input": {
+                                            tag: "input",
+                                            id: "message-input",
+                                            attribute: {
+                                                "type": "text",
+                                                "maxlength": "200",
+                                                "placeholder": "Enter to chat",
+                                                "spellcheck": "false"
+                                            },
+                                            style: {
+                                                "width": "200px",
+                                                "height": "100%",
+                                                "color": "#fff",
+                                                "background": "rgba(0, 0, 0, 0.25)",
+                                                "box-shadow": "inset 0 0 0 2px rgba(0, 0, 0, 0.25)",
+                                                "border": "none",
+                                                "border-radius": "5px",
+                                                "font-size": "14px",
+                                                "font-family": "'Ubuntu', sans-serif",
+                                                "font-weight": "700",
+                                                "outline": "none",
+                                                "padding": "0 10px"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "main-canvas-container": {
+                    id: "main-canvas-container",
+                    class: "container full center",
+                    parent: "body",
+                    style: {
+                        "z-index": "0"
+                    }
+                }
+            };
+
+            const serverkeys = Object.keys(Client.servers);
+            const serverbox = elements["overlay-container"].children["pane-sub-container"].children["pane-column-right"].children["server-section"].children["server-grid"].children;
+
+            for (let i = 0; i < serverkeys.length; i++) {
+                serverbox[`server-row-${i}`] = {
+                    class: `server-box ${i == 0 ? "server-box-selected" : ""} relative`,
+                        attribute: {
+                            "ip-address": Client.servers[serverkeys[i]]
+                        },
+                        children: {
+                            "ip-address": {
+                                class: "server-ip-address absolute",
+                                text: `<i class="fa-solid fa-lock-open" style="transform: translate(0, -1px);margin: 0 2.5px 0 0"></i> ${Client.servers[serverkeys[i]].replace(/wss?:\/\//g, "").replace(/:\d*/g, "").replace(/\/api\/?/g, "")}`
+                            },
+                            "host": {
+                                class: "server-host absolute",
+                                text: serverkeys[i]
+                            }
+                        }
+                }
+            }
+
+            const emojiKeys = Object.keys(Client.emojis);
+            const emojiListItem = elements["game-overlay-container"].children["chat-sub-container"].children["chat-emoji-ul"].children;
+
+            for (let i = 0; i < emojiKeys.length; i++) {
+                emojiListItem[`chat-emoji-li-${i}`] = {
+                    class: "chat-emoji-li",
+                    text: Client.emojis[`${i}`],
+                    style: {
+                        "width": "35px",
+                        "height": "35px",
+                        "line-height": "35px",
+                        "text-align": "center",
+                        "background": "rgba(0, 0, 0, 0.1)",
+                        "border-radius": "5px",
+                        "font-size": "22px"
+                    }
+                }
+            }
+
+            let bodyCSS = Object.keys(globalCSS["body"]);
+
+            for (let i = 0; i < bodyCSS.length; i++) {
+                document.body.style[bodyCSS[i]] = globalCSS["body"][bodyCSS[i]];
+            }
+
+            let keys = Object.keys(elements);
+
+            for (let i = 0; i < keys.length; i++) {
+                let element = elements[keys[i]];
+                element.component = new Component(element, globalCSS);
+
+                if (element.component.parent == "body") {
+                    document.body.appendChild(element.component.element);
+                }
+            }
+        }
+    };
+
     /* Message Functions*/
 
     Client.checkMessageType = (origin, message) => {
@@ -387,19 +1240,25 @@ setup = () => {
     };
 
     Client.addChatMessage = (origin, message) => {
+        const chatboxStyle = "position: relative; width: calc(100% - 30px); text-align: left; background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)); border-radius: 2px 15px 15px 15px; padding: 15px;";
+        const senderStyle = "font-size: 18px; display: block;";
+        const timestampStyle = "position: absolute; bottom: 15px; right: 15px; font-size: 12px; opacity: 0.5;";
+
         const messageData = `<span>${message}</span>`;
-        const originData = `<div class="chat-sender"><strong>${origin}</strong></div>`;
-        const timeData = `<div class="chat-timestamp absolute">${Client.util.getDate()}</div>`;
+        const originData = `<div class="chat-sender" style="${senderStyle}"><strong>${origin}</strong></div>`;
+        const timeData = `<div class="chat-timestamp" style="${timestampStyle}">${Client.util.getDate()}</div>`;
 
         if (message == Client.log.lastMessageSent) {
             $("#message-input").val("");
         }
 
-        $("#chat-box").append(`<div class="chat-box relative">${originData}${messageData}${timeData}</div>`);
+        $("#chat-box").append(`<div class="chat-box" style="${chatboxStyle}">${originData}${messageData}${timeData}</div>`);
         $("#chat-box").animate({scrollTop: $("#chat-box").prop("scrollHeight")}, 250);
     };
 
     Client.addJoinedNotification = (nick) => {
+        const chatboxStyle = "display: block; width: 100%;";
+
         $("#chat-box").append(`<div class="chat-box-joined relative"><strong>${nick || "An Unnamed Cell"}</strong> has joined</div>`);
         $("#chat-box").animate({scrollTop: $("#chat-box").prop("scrollHeight")}, 250);
     };
@@ -465,8 +1324,6 @@ setup = () => {
             $("#skin-search-list").append(html);
         }
     };
-
-    Client.renderer = new Object();
 
     Client.renderer.renderChatEmoji = () => {
         const canvas = Client.canvas.emoji;
@@ -654,7 +1511,7 @@ setup = () => {
                     Client.connections.push(new Connection("minion", Client.settings.url));
                 }
 
-                $("#toggle-minions").removeClass("btn-green").addClass("btn-red").text("Stop");
+                $("#toggle-minions").css("background-color", "#f7000c").text("Stop");
             } break;
             case "inactive": {
                 for (let i = Client.connections.length - 1; i >= 0; i--) {
@@ -666,7 +1523,7 @@ setup = () => {
                     }
                 }
 
-                $("#toggle-minions").removeClass("btn-red").addClass("btn-green").text("Start");
+                $("#toggle-minions").css("background-color", "#54c800").text("Start");
             } break;
         }
     };
@@ -937,11 +1794,13 @@ setup = () => {
             setLocal("minion-nick", $("#minion-nick").val());
         }).val(getLocal("minion-nick") || "");
 
-        $(".minion-amount-li").on("click", function () {
-            $(".minion-amount-li").removeClass("minion-amount-li-selected");
-            $(this).addClass("minion-amount-li-selected");
+        $("#minion-amount-slider").on("input", function () {
+            const amount = $(this).val();
 
-            Client.minion.amount = Number($(this).text()) || 50;
+            Client.minion.amount = Number(amount) || 25;
+            $("#minion-amount-label").text(`${amount} Bots`);
+
+            setLocal("minion-amount", amount);
         });
 
         $("#toggle-minions").on("click", () => {
@@ -982,6 +1841,28 @@ setup = () => {
 
     Client.util.hasPlayerId = (id) => {
         return Client.entities.player.findIndex(index => index.id == id) > - 1;
+    };
+
+    /* Client Emojis */
+
+    Client.emojis = {
+        "0": "😁",
+        "1": "🤣",
+        "2": "😎",
+        "3": "🥳",
+        "4": "😤",
+        "5": "🤬",
+        "6": "💀",
+        "7": "👻"
+    }
+
+    /* Client Servers */
+
+    Client.servers = {
+        "EatCells": "wss://eatcells.com/api/",
+        "Ogar": "wss://ogar.eatcells.com/api/",
+        "Mivabe": "ws://ogar.mivabe.nl:44411",
+        "Ogar2XD": "ws://ogar2xd.glitch.me:80"
     };
 
     /* Client Settings */
@@ -1061,6 +1942,10 @@ setup = () => {
     Client.skin.player = "";
 
     Client.status = "inactive";
+
+    /* Setup */
+
+    Client.renderer.renderHTML();
 
     /* Canvases */
 
@@ -1203,7 +2088,7 @@ setup = () => {
 
     mouseWheel = (event) => {
         const gameOverlayIsVisible = $("#game-overlay-container").is(":visible");
-        const mouseOverChat = $(".chat-sub-container").is(":hover");
+        const mouseOverChat = $("#chat-sub-container").is(":hover");
 
         if (gameOverlayIsVisible && !mouseOverChat) {
             Client.camera.newS = Client.camera.newS + (event.delta > 0 ? - Client.camera.newS / 15 : Client.camera.newS / 15);
